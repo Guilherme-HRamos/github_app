@@ -2,6 +2,7 @@ package br.com.gabrielmarcos.githubmvvm.gist
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import br.com.gabrielmarcos.githubmvvm.core.TrampolineSchedulerRule
+import br.com.gabrielmarcos.githubmvvm.model.Gist
 import br.com.gabrielmarcos.githubmvvm.utils.favExpectedResponse
 import br.com.gabrielmarcos.githubmvvm.utils.getOrAwaitValue
 import br.com.gabrielmarcos.githubmvvm.utils.gistExpectedResponse
@@ -52,6 +53,26 @@ class GistViewModelTest {
         viewModel.connectionAvailability = true
         viewModel.getGistList()
         assertGistResultList()
+    }
+
+    @Test
+    fun `when remote gist list response error then assert has errors`() {
+        val exceptionMessage = "when remote gist list response error then assert has errors"
+        `when`(gistRepository.getGistList(0, true)).thenThrow(RuntimeException(exceptionMessage))
+
+        viewModel.connectionAvailability = true
+        viewModel.getGistList()
+
+        viewModel.showLoading.getOrAwaitValue().run {
+            assertNotNull(getContentIfNotHandled())
+        }
+        viewModel.showSnackbarMessage.getOrAwaitValue().run {
+            assertEquals(exceptionMessage, this.peekContent())
+            assertNotNull(getContentIfNotHandled())
+        }
+        viewModel.resultError.getOrAwaitValue().run {
+            assertNotNull(getContentIfNotHandled())
+        }
     }
 
     @Test
