@@ -1,10 +1,15 @@
 package br.com.gabrielmarcos.githubmvvm.gist
 
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.Observer
 import br.com.gabrielmarcos.githubmvvm.base.gateway.RxViewModel
+import br.com.gabrielmarcos.githubmvvm.base.view.MainViewState
 import br.com.gabrielmarcos.githubmvvm.data.Event
+import br.com.gabrielmarcos.githubmvvm.data.EventObserver
 import br.com.gabrielmarcos.githubmvvm.model.FavModel
 import br.com.gabrielmarcos.githubmvvm.model.Gist
+import br.com.gabrielmarcos.githubmvvm.util.emptyString
+import br.com.gabrielmarcos.githubmvvm.util.printer
 import javax.inject.Inject
 
 open class GistViewModel @Inject constructor(
@@ -18,27 +23,69 @@ open class GistViewModel @Inject constructor(
     internal var listResult: List<Gist> = emptyList()
     internal var favIdList: List<String> = emptyList()
 
-    internal val showSnackbarMessage: MutableLiveData<Event<String>> = MutableLiveData()
-    internal val showLoading: MutableLiveData<Event<Unit>> = MutableLiveData()
-    internal val gistListViewState: MutableLiveData<List<Gist>> = MutableLiveData()
-    internal val gistDetailViewState: MutableLiveData<Gist> = MutableLiveData()
-    internal val resultError: MutableLiveData<Event<Unit>> = MutableLiveData()
-    internal val resultSuccess: MutableLiveData<Event<Unit>> = MutableLiveData()
+    private var mainViewState = MainViewState()
+    internal val gistListViewState = GistListViewState()
+    internal val gistDetailViewState = GistDetailViewState()
+
+    fun observeGistListViewState(
+        owner: LifecycleOwner,
+        dslViewState: GistListViewState.() -> Unit
+    ) {
+        mainViewState = gistListViewState
+            .also(dslViewState)
+            .apply {
+                loadingLiveData.observe(owner, EventObserver {
+                    onLoading(it)
+                })
+                successLiveData.observe(owner, EventObserver {
+                    onSuccess(it)
+                })
+                snackBarLiveData.observe(owner, EventObserver {
+                    onShowMessage(it)
+                })
+                gistListLiveData.observe(owner, Observer {
+                    onReceiveGistList(it)
+                })
+            }
+    }
+
+    fun observeGistDetailViewState(
+        owner: LifecycleOwner,
+        dslViewState: GistDetailViewState.() -> Unit
+    ) {
+        mainViewState = gistDetailViewState
+            .also(dslViewState)
+            .apply {
+                loadingLiveData.observe(owner, EventObserver {
+                    onLoading(it)
+                })
+                successLiveData.observe(owner, EventObserver {
+                    onSuccess(it)
+                })
+                snackBarLiveData.observe(owner, EventObserver {
+                    onShowMessage(it)
+                })
+                gistLiveData.observe(owner, Observer {
+                    onReceiveGist(it)
+                })
+            }
+    }
 
     fun getGistList() {
         runSingle<List<Gist>> {
-            runBefore {
-                showLoading.value = Event(Unit)
-            }
+            runBefore { updateLoadingState(true) }
             withSingle { gistRepository.getGistList(currentPage, connectionAvailability) }
             onSuccess(::handleGistListResult)
             onFailure(::handleError)
         }
     }
 
-    private fun handleGistListResult(gist: List<Gist>) {
-        getLocalFavoriteList()
-        listResult = gist
+    fun getGist(id: String) {
+        runSingle<Gist> {
+            withSingle { gistRepository.getGist(id, connectionAvailability) }
+            onSuccess(::gistSuccess)
+            onFailure(::handleError)
+        }
     }
 
     fun getLocalFavoriteList() {
@@ -47,6 +94,17 @@ open class GistViewModel @Inject constructor(
             onSuccess(::getOnlyFavId)
             onFailure(::handleError)
         }
+    }
+
+    fun saveLocalResponse(gist: List<Gist>) {
+        runCompletable {
+            withFunction { gistRepository.saveLocalGist(gist) }
+        }
+    }
+
+    private fun handleGistListResult(gist: List<Gist>) {
+        getLocalFavoriteList()
+        listResult = gist
     }
 
     private fun getOnlyFavId(favList: List<FavModel>) {
@@ -58,18 +116,18 @@ open class GistViewModel @Inject constructor(
 
     private fun buildGistMapper() {
         handleListUpdate().let {
-            gistListViewState.value = it
+            updateListState(it)
             saveLocalResponse(it)
         }
-        resultSuccess.value = Event(Unit)
+        updateSuccessState(true)
     }
 
     private fun handleListUpdate(): List<Gist> {
-        return if (gistListViewState.value.isNullOrEmpty()) {
+        return if (requestGistListValue().isNullOrEmpty()) {
             GistMapper.map(listResult, favIdList)
         } else {
             GistMapper.map(
-                gistListViewState.value!!
+                requestGistListValue()
                     .plus(listResult)
                     .distinct(),
                 favIdList
@@ -77,29 +135,26 @@ open class GistViewModel @Inject constructor(
         }
     }
 
-    fun getGist(id: String) {
-        runSingle<Gist> {
-            withSingle {
-                gistRepository.getGist(id, connectionAvailability)
-            }
-            onSuccess(::gistSuccess)
-            onFailure(::handleError)
-        }
-    }
-
     private fun gistSuccess(gist: Gist) {
-        gistDetailViewState.value = gist
-        resultSuccess.value = Event(Unit)
+        updateGistState(gist)
+        updateSuccessState(true)
     }
 
     private fun handleError(throwable: Throwable) {
-        showSnackbarMessage.value = Event(throwable.message ?: "")
-        resultError.value = Event(Unit)
+        printer("handleError()")
+        updateSuccessState(false)
+        updateSnackBarState(throwable.message ?: emptyString())
     }
 
-    fun saveLocalResponse(gist: List<Gist>) {
+    private fun addGistFav(gist: Gist) {
         runCompletable {
-            withFunction { gistRepository.saveLocalGist(gist) }
+            withFunction { gistRepository.setFavoriteGist(gist) }
+        }
+    }
+
+    private fun deleteGistFav(gistId: String) {
+        runCompletable {
+            withFunction { gistRepository.deletFavoriteGistById(gistId) }
         }
     }
 
@@ -109,22 +164,6 @@ open class GistViewModel @Inject constructor(
         } ?: deleteGistFav(gist.gistId)
     }
 
-    private fun addGistFav(gist: Gist) {
-        runCompletable {
-            withFunction {
-                gistRepository.setFavoriteGist(gist)
-            }
-        }
-    }
-
-    private fun deleteGistFav(gistId: String) {
-        runCompletable {
-            withFunction {
-                gistRepository.deletFavoriteGistById(gistId)
-            }
-        }
-    }
-
     fun updateGistList() {
         currentPage++
         getGistList()
@@ -132,5 +171,29 @@ open class GistViewModel @Inject constructor(
 
     fun filterGistOwner(ownerLogin: String?) {
         //TODO Searchview needed share viewmodel between activity and fragment
+    }
+
+    private fun updateSuccessState(isSuccess: Boolean) {
+        mainViewState.successLiveData.value = Event(isSuccess)
+    }
+
+    private fun updateLoadingState(showLoading: Boolean) {
+        mainViewState.loadingLiveData.value = Event(showLoading)
+    }
+
+    private fun updateSnackBarState(string: String) {
+        mainViewState.snackBarLiveData.value = Event(string)
+    }
+
+    private fun updateListState(data: List<Gist>) {
+        gistListViewState.gistListLiveData.value = data
+    }
+
+    private fun updateGistState(data: Gist) {
+        gistDetailViewState.gistLiveData.value = data
+    }
+
+    private fun requestGistListValue(): List<Gist> {
+        return gistListViewState.getListValue()
     }
 }

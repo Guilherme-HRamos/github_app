@@ -26,4 +26,12 @@ abstract class BaseFragment : Fragment() {
             Snackbar.make(view, it, Snackbar.LENGTH_LONG).show()
         })
     }
+
+    fun createSnackbarObserver(snackbarMessage: LiveData<Event<String>>) {
+        snackbarMessage.observe(viewLifecycleOwner, EventObserver {
+            view?.let { view ->
+                Snackbar.make(view, it, Snackbar.LENGTH_LONG).show()
+            }
+        })
+    }
 }

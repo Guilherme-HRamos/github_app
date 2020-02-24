@@ -6,16 +6,19 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
-import br.com.gabrielmarcos.githubmvvm.data.EventObserver
 import br.com.gabrielmarcos.githubmvvm.R
 import br.com.gabrielmarcos.githubmvvm.base.view.BaseFragment
+import br.com.gabrielmarcos.githubmvvm.data.Event
+import br.com.gabrielmarcos.githubmvvm.data.EventObserver
 import br.com.gabrielmarcos.githubmvvm.extensions.hide
 import br.com.gabrielmarcos.githubmvvm.extensions.injectViewModel
 import br.com.gabrielmarcos.githubmvvm.extensions.show
+import br.com.gabrielmarcos.githubmvvm.extensions.showIf
 import br.com.gabrielmarcos.githubmvvm.model.Gist
 import br.com.gabrielmarcos.githubmvvm.util.InfiniteScrollListener
 import br.com.gabrielmarcos.githubmvvm.util.InternetUtil
 import br.com.gabrielmarcos.githubmvvm.util.NavigationCustom
+import br.com.gabrielmarcos.githubmvvm.util.printer
 import kotlinx.android.synthetic.main.gist_fragment.*
 
 class GistFragment : BaseFragment() {
@@ -37,7 +40,6 @@ class GistFragment : BaseFragment() {
         setUpViewModel()
         setUpObservables()
         setUpAdapter()
-        setUpSnackbar(this.view!!, viewModel.showSnackbarMessage)
     }
 
     private fun setUpViewModel() {
@@ -47,25 +49,21 @@ class GistFragment : BaseFragment() {
     }
 
     private fun setUpObservables() {
-        viewModel.gistListViewState.observe(viewLifecycleOwner, Observer { viewState ->
-            gistAdapter.items = viewState
-        })
 
-        viewModel.showLoading.observe(viewLifecycleOwner, EventObserver {
-            gistProgressBar.show()
-        })
-
-        viewModel.resultError.observe(viewLifecycleOwner, EventObserver {
-            gistGroupError.show()
-            gistProgressBar.hide()
-            gistRecyclerView.hide()
-        })
-
-        viewModel.resultSuccess.observe(viewLifecycleOwner, EventObserver {
-            gistRecyclerView.show()
-            gistGroupError.hide()
-            gistProgressBar.hide()
-        })
+        viewModel.observeGistListViewState(viewLifecycleOwner) {
+            createSnackbarObserver(snackBarLiveData)
+            onLoading = {
+                gistProgressBar.showIf(it)
+            }
+            onSuccess = {
+                gistProgressBar.hide()
+                gistRecyclerView.showIf(it)
+                gistGroupError.showIf(!it)
+            }
+            onReceiveGistList = {
+                gistAdapter.items = it
+            }
+        }
     }
 
     private fun setUpAdapter() {
@@ -73,8 +71,11 @@ class GistFragment : BaseFragment() {
         gistRecyclerView.apply {
             layoutManager = linearLayout
             adapter = gistAdapter
-            addOnScrollListener(InfiniteScrollListener(
-                { updateList() }, linearLayout))
+            addOnScrollListener(
+                InfiniteScrollListener(
+                    { updateList() }, linearLayout
+                )
+            )
         }
     }
 

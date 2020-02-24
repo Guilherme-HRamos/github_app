@@ -88,7 +88,7 @@ abstract class SingleSubscriber<P> {
         withSingle {
             // Single variable
         }
-        onComplete {
+        onSuccess {
             // dispatched when source is finished with success
         }
         onFailure { error: Throwable ->

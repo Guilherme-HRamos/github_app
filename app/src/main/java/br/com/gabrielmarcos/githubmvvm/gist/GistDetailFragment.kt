@@ -29,7 +29,6 @@ class GistDetailFragment : BaseFragment() {
         super.onActivityCreated(savedInstanceState)
         setUpViewModel()
         setUpObservables()
-        setUpSnackbar(this.view!!, viewModel.showSnackbarMessage)
     }
 
     private fun setUpViewModel() {
@@ -38,9 +37,12 @@ class GistDetailFragment : BaseFragment() {
     }
 
     private fun setUpObservables() {
-        viewModel.gistDetailViewState.observe(viewLifecycleOwner, Observer {
-            setUpView(it)
-        })
+        viewModel.observeGistDetailViewState(viewLifecycleOwner) {
+            createSnackbarObserver(snackBarLiveData)
+            onReceiveGist = {
+                setUpView(it)
+            }
+        }
     }
 
     private fun setUpView(gist : Gist) {
