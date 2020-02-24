@@ -31,8 +31,8 @@ open class GistViewModel @Inject constructor(
                 showLoading.value = Event(Unit)
             }
             withSingle { gistRepository.getGistList(currentPage, connectionAvailability) }
-            withSuccess(::handleGistListResult)
-            withFailure(::handleError)
+            onSuccess(::handleGistListResult)
+            onFailure(::handleError)
         }
     }
 
@@ -44,8 +44,8 @@ open class GistViewModel @Inject constructor(
     fun getLocalFavoriteList() {
         runSingle<List<FavModel>> {
             withSingle { gistRepository.getSavedFavoriteGist() }
-            withSuccess(::getOnlyFavId)
-            withFailure(::handleError)
+            onSuccess(::getOnlyFavId)
+            onFailure(::handleError)
         }
     }
 
@@ -82,8 +82,8 @@ open class GistViewModel @Inject constructor(
             withSingle {
                 gistRepository.getGist(id, connectionAvailability)
             }
-            withSuccess(::gistSuccess)
-            withFailure(::handleError)
+            onSuccess(::gistSuccess)
+            onFailure(::handleError)
         }
     }
 
@@ -99,9 +99,7 @@ open class GistViewModel @Inject constructor(
 
     fun saveLocalResponse(gist: List<Gist>) {
         runCompletable {
-            withFunction {
-                gistRepository.saveLocalGist(gist)
-            }
+            withFunction { gistRepository.saveLocalGist(gist) }
         }
     }
 

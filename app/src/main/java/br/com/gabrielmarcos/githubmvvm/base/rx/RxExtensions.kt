@@ -3,46 +3,41 @@ package br.com.gabrielmarcos.githubmvvm.base.rx
 import io.reactivex.Completable
 import io.reactivex.Single
 
-@DslMarker
-annotation class SingleSubscriberDslMarker
-
-@DslMarker
-annotation class CompletableSubscriberDslMarker
-
-@SingleSubscriberDslMarker
-class SingleSubscriberDSLBuilder {
-    fun <P> build(function: SingleSubscriberDSL<P>.() -> Unit): SingleSubscriberDSL<P> =
-        SingleSubscriberDSL<P>()
-            .apply(function)
-            .also { it.onBefore() }
-}
-@CompletableSubscriberDslMarker
-class CompletableSubscriberDSLBuilder: CompletableSubscriberDsl() {
-    fun build(function: CompletableSubscriberDsl.() -> Unit): CompletableSubscriberDsl =
-            this.apply(function).also { it.onBefore() }
+abstract class CompletableSubscriber {
+    protected var function: () -> Completable = { Completable.complete() }
+    protected var before: () -> Unit = {}
+    protected var complete: () -> Unit = {}
+    protected var failure: (error: Throwable) -> Unit = {}
 }
 
-@CompletableSubscriberDslMarker
-abstract class CompletableSubscriberDsl {
-    var function: () -> Completable = { Completable.complete() }
-    var onBefore: () -> Unit = {}
-    var onComplete: () -> Unit = {}
-    var onFailure: (error: Throwable) -> Unit = {}
+class CompletableSubscriberCreator: CompletableSubscriber() {
+
+    companion object Builder {
+        fun create(creator: CompletableSubscriberCreator.() -> Unit): CompletableSubscriberCreator {
+            return CompletableSubscriberCreator()
+                .apply(creator)
+                .also { it.before() }
+        }
+    }
+
+    fun dispatchComplete() = complete()
+
+    fun dispatchFailure(error: Throwable) = failure(error)
 
     fun withFunction(function: () -> Completable) {
         this.function = function
     }
 
-    fun withSuccess(onComplete: () -> Unit) {
-        this.onComplete = onComplete
+    fun onComplete(onComplete: () -> Unit) {
+        this.complete = onComplete
     }
 
-    fun withFailure(onFailure: (error: Throwable) -> Unit) {
-        this.onFailure = onFailure
+    fun onFailure(onFailure: (error: Throwable) -> Unit) {
+        this.failure = onFailure
     }
 
     fun runBefore(onBeforeArgument: () -> Unit) {
-        onBefore = onBeforeArgument
+        before = onBeforeArgument
     }
 
     fun execute(): Completable {
@@ -50,29 +45,46 @@ abstract class CompletableSubscriberDsl {
     }
 }
 
-@SingleSubscriberDslMarker
-class SingleSubscriberDSL<P> {
-    var single: () -> Single<P> = { Single.never() }
-    var onBefore: () -> Unit = {}
-    var onSuccess: (result: P) -> Unit = {}
-    var onFailure: (error: Throwable) -> Unit = {}
+abstract class SingleSubscriber<P> {
+    protected var function: () -> Single<P> = { Single.never() }
+    protected var before: () -> Unit = {}
+    protected var success: (result: P) -> Unit = {}
+    protected var failure: (error: Throwable) -> Unit = {}
+}
 
-    fun withSingle(single: () -> Single<P>) {
-        this.single = single
+class SingleSubscriberCreator<P>: SingleSubscriber<P>() {
+
+    companion object Builder {
+        fun <P> create(creator: SingleSubscriberCreator<P>.() -> Unit): SingleSubscriberCreator<P> {
+            return SingleSubscriberCreator<P>()
+                .apply(creator)
+                .also { it.before() }
+        }
     }
 
-    fun withSuccess(onSuccess: (result: P) -> Unit) {
-        this.onSuccess = onSuccess
+    fun dispatchSuccess(result: P) = success(result)
+
+    fun dispatchFailure(error: Throwable) = failure(error)
+
+    fun withSingle(function: () -> Single<P>) {
+        this.function = function
     }
 
-    fun withFailure(onFailure: (error: Throwable) -> Unit) {
-        this.onFailure = onFailure
+    fun onSuccess(onSuccess: (result: P) -> Unit) {
+        this.success = onSuccess
+    }
+
+    fun onFailure(onFailure: (error: Throwable) -> Unit) {
+        this.failure = onFailure
     }
 
     fun runBefore(onBeforeArgument: () -> Unit) {
-        onBefore = onBeforeArgument
+        before = onBeforeArgument
     }
 
-    // execute the var `single` only when it's properly subscribed
-    fun defer(): Single<P> = Single.defer(single)
+    /**
+     * Execute the var `single` only when it's properly subscribed
+     * Example https://blog.mindorks.com/understanding-rxjava-defer-operator
+     */
+    fun defer(): Single<P> = Single.defer(function)
 }

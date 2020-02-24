@@ -2,7 +2,6 @@ package br.com.gabrielmarcos.githubmvvm.gist
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import br.com.gabrielmarcos.githubmvvm.core.TrampolineSchedulerRule
-import br.com.gabrielmarcos.githubmvvm.model.Gist
 import br.com.gabrielmarcos.githubmvvm.utils.favExpectedResponse
 import br.com.gabrielmarcos.githubmvvm.utils.getOrAwaitValue
 import br.com.gabrielmarcos.githubmvvm.utils.gistExpectedResponse
