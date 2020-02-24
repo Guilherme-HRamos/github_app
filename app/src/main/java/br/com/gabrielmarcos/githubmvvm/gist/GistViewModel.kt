@@ -9,7 +9,7 @@ import br.com.gabrielmarcos.githubmvvm.data.EventObserver
 import br.com.gabrielmarcos.githubmvvm.model.FavModel
 import br.com.gabrielmarcos.githubmvvm.model.Gist
 import br.com.gabrielmarcos.githubmvvm.util.emptyString
-import br.com.gabrielmarcos.githubmvvm.util.printer
+import br.com.gabrielmarcos.githubmvvm.util.then
 import javax.inject.Inject
 
 open class GistViewModel @Inject constructor(
@@ -23,8 +23,8 @@ open class GistViewModel @Inject constructor(
     internal var listResult: List<Gist> = emptyList()
     internal var favIdList: List<String> = emptyList()
 
-    private var mainViewState = MainViewState()
-    internal val gistListViewState = GistListViewState()
+    var mainViewState = MainViewState()
+    var gistListViewState = GistListViewState()
     internal val gistDetailViewState = GistDetailViewState()
 
     fun observeGistListViewState(
@@ -108,31 +108,28 @@ open class GistViewModel @Inject constructor(
     }
 
     private fun getOnlyFavId(favList: List<FavModel>) {
-        val favIds = ArrayList<String>()
-        favList.forEach { favIds.add(it.favId) }
-        favIdList = favIds
+        favIdList = favList.mapStarredItems()
         buildGistMapper()
     }
 
-    private fun buildGistMapper() {
-        handleListUpdate().let {
-            updateListState(it)
-            saveLocalResponse(it)
-        }
-        updateSuccessState(true)
+    private fun List<FavModel>.mapStarredItems(): List<String> {
+        return map { it.favId }.toList()
     }
 
-    private fun handleListUpdate(): List<Gist> {
-        return if (requestGistListValue().isNullOrEmpty()) {
-            GistMapper.map(listResult, favIdList)
-        } else {
-            GistMapper.map(
-                requestGistListValue()
-                    .plus(listResult)
-                    .distinct(),
-                favIdList
-            )
+    private fun filterGistList(): List<Gist> {
+        return when {
+            requestGistListValue().isNullOrEmpty() -> listResult
+            else -> requestGistListValue().plus(listResult).distinct()
         }
+    }
+
+    private fun buildGistMapper() {
+        GistMapper.map(filterGistList(), favIdList)
+            .let {
+                updateListState(it)
+                saveLocalResponse(it)
+                updateSuccessState(true)
+            }
     }
 
     private fun gistSuccess(gist: Gist) {
@@ -141,7 +138,6 @@ open class GistViewModel @Inject constructor(
     }
 
     private fun handleError(throwable: Throwable) {
-        printer("handleError()")
         updateSuccessState(false)
         updateSnackBarState(throwable.message ?: emptyString())
     }
@@ -159,9 +155,8 @@ open class GistViewModel @Inject constructor(
     }
 
     fun handleFavoriteState(gist: Gist) {
-        takeIf { gist.starred }?.run {
-            addGistFav(gist)
-        } ?: deleteGistFav(gist.gistId)
+        gist.starred.then { addGistFav(gist) }
+            ?: deleteGistFav(gist.gistId)
     }
 
     fun updateGistList() {

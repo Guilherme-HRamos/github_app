@@ -10,6 +10,7 @@ import br.com.gabrielmarcos.githubmvvm.utils.unstarredGistExpectedValue
 import io.reactivex.Completable
 import io.reactivex.Single.just
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -59,18 +60,19 @@ class GistViewModelTest {
         val exceptionMessage = "when remote gist list response error then assert has errors"
         `when`(gistRepository.getGistList(0, true)).thenThrow(RuntimeException(exceptionMessage))
 
-        viewModel.connectionAvailability = true
-        viewModel.getGistList()
+        viewModel.run {
+            connectionAvailability = true
+            getGistList()
+        }
 
-        viewModel.showLoading.getOrAwaitValue().run {
-            assertNotNull(getContentIfNotHandled())
+        viewModel.mainViewState.successLiveData.getOrAwaitValue().run {
+            assertFalse(peekContent())
         }
-        viewModel.showSnackbarMessage.getOrAwaitValue().run {
-            assertEquals(exceptionMessage, this.peekContent())
-            assertNotNull(getContentIfNotHandled())
+        viewModel.mainViewState.snackBarLiveData.getOrAwaitValue().run {
+            assertEquals(peekContent(), exceptionMessage)
         }
-        viewModel.resultError.getOrAwaitValue().run {
-            assertNotNull(getContentIfNotHandled())
+        viewModel.mainViewState.loadingLiveData.getOrAwaitValue().run {
+            assertFalse(!peekContent())
         }
     }
 
@@ -85,12 +87,12 @@ class GistViewModelTest {
 
         assertTrue(viewModel.favIdList.size == 3)
 
-        viewModel.gistListViewState.getOrAwaitValue().run {
+        viewModel.gistListViewState.gistListLiveData.getOrAwaitValue().run {
             assertNotNull(this)
         }
 
-        viewModel.resultSuccess.getOrAwaitValue().run {
-            assertNotNull(this)
+        viewModel.mainViewState.successLiveData.getOrAwaitValue().run {
+            assertTrue(peekContent())
         }
     }
 
@@ -102,13 +104,13 @@ class GistViewModelTest {
 
         verify(gistRepository, times(1)).getGist("", true)
 
-        viewModel.gistDetailViewState.getOrAwaitValue().run {
+        viewModel.gistDetailViewState.gistLiveData.getOrAwaitValue().run {
             assertNotNull(this)
             assertTrue(this == starredGistExpectedValue)
         }
 
-        viewModel.resultSuccess.getOrAwaitValue().run {
-            assertNotNull(this)
+        viewModel.mainViewState.successLiveData.getOrAwaitValue().run {
+            assertNotNull(getContentIfNotHandled())
         }
     }
 
@@ -164,16 +166,16 @@ class GistViewModelTest {
         verify(gistRepository, times(1)).getSavedFavoriteGist()
         verify(gistRepository, times(1)).saveLocalGist(emptyList())
 
-        viewModel.showLoading.getOrAwaitValue().run {
+        viewModel.mainViewState.loadingLiveData.getOrAwaitValue().run {
             assertNotNull(getContentIfNotHandled())
         }
 
-        viewModel.gistListViewState.getOrAwaitValue().run {
+        viewModel.gistListViewState.gistListLiveData.getOrAwaitValue().run {
             assertNotNull(this)
         }
 
-        viewModel.resultSuccess.getOrAwaitValue().run {
-            assertNotNull(this)
+        viewModel.mainViewState.successLiveData.getOrAwaitValue().run {
+            assertNotNull(getContentIfNotHandled())
         }
     }
 }
