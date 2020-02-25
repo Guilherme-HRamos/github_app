@@ -76,7 +76,6 @@ class GistRepositoryImplTest {
         val testObserver =
             repository.deletFavoriteGistById(unstarredGistExpectedValue.gistId).test()
 
-
         testObserver.assertNoErrors()
     }
 
@@ -84,7 +83,6 @@ class GistRepositoryImplTest {
     fun `when get gist local database assert result not null`() {
         `when`(gistDAO.getGistById(gistDefault.gistId)).thenReturn(just(gistDefault))
         val testObserver = repository.getGist(gistDefault.gistId, false).test()
-
 
         testObserver.assertComplete()
         testObserver.assertValue {

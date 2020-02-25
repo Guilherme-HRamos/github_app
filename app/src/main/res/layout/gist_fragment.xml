@@ -7,26 +7,45 @@
     android:layout_height="match_parent"
     tools:context=".gist.GistFragment">
 
-
     <ImageView
         android:id="@+id/gistErrorIcon"
+        android:layout_width="@dimen/icon_size"
+        android:layout_height="@dimen/icon_size"
+        android:src="@drawable/ic_problem"
+        app:layout_constraintBottom_toTopOf="@+id/gistErrorGuideline"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/gistErrorTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/git_error_image"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:text="@string/gist_error_title"
+        android:layout_marginTop="@dimen/margin_normal"
+        android:gravity="center"
+        android:textSize="@dimen/text_size_error_title"
+        app:layout_constraintEnd_toEndOf="@+id/gistErrorIcon"
+        app:layout_constraintStart_toStartOf="@+id/gistErrorIcon"
+        app:layout_constraintTop_toBottomOf="@+id/gistErrorIcon"/>
 
     <TextView
         android:id="@+id/gistErrorMessage"
         android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:text="@string/gist_error_description"
+        android:layout_margin="@dimen/margin_normal"
+        android:gravity="center"
+        android:textSize="@dimen/text_size_error_description"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/gistErrorTitle"/>
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/gistErrorGuideline"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/gist_error"
-        android:textSize="20sp"
-        app:layout_constraintEnd_toEndOf="@+id/gistErrorIcon"
-        app:layout_constraintStart_toStartOf="@+id/gistErrorIcon"
-        app:layout_constraintTop_toBottomOf="@+id/gistErrorIcon"/>
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.5" />
 
 
     <androidx.recyclerview.widget.RecyclerView
@@ -55,6 +74,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:constraint_referenced_ids="gistErrorIcon,gistErrorMessage" />
+        app:constraint_referenced_ids="gistErrorIcon,gistErrorMessage,gistErrorTitle" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

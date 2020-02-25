@@ -9,7 +9,7 @@ import androidx.annotation.StringRes
 import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.Observer
 import br.com.gabrielmarcos.githubmvvm.R
-import br.com.gabrielmarcos.githubmvvm.extensions.injectViewModel
+import br.com.gabrielmarcos.githubmvvm.extensions.viewModelProvider
 import br.com.gabrielmarcos.githubmvvm.gist.GistViewModel
 import br.com.gabrielmarcos.githubmvvm.util.InternetUtil
 import com.google.android.material.snackbar.Snackbar
@@ -36,7 +36,7 @@ class MainActivity : BaseActivity() {
     }
 
     private fun setUpViewModel() {
-        gistViewModel = injectViewModel(viewModelFactory)
+        gistViewModel = viewModelProvider(viewModelFactory)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -48,8 +48,9 @@ class MainActivity : BaseActivity() {
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean = false
-            override fun onQueryTextChange(newText: String?): Boolean {
-                gistViewModel.filterGistOwner(newText)
+            override fun onQueryTextChange(quest: String?): Boolean {
+                // gistViewModel.checkOwnerFilter(quest)
+                setUpSnakMessage(R.string.gist_feature_in_progress, R.color.orange_warning)
                 return true
             }
         })

@@ -10,4 +10,6 @@
     <color name="purple_attention">#8B008B</color>
 
     <color name="light_grey">#F2F2F2</color>
+
+    <color name="orange_warning">#ff9933</color>
 </resources>

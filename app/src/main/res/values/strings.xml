@@ -6,6 +6,13 @@
     <item name="gist_field_name_title" type="string">Name :</item>
 
     <item name="gist_menu_search_title" type="string">Search</item>
-    <item name="gist_error" type="string">Oops, something went wrong!</item>
+
+    <item name="gist_error_title" type="string">We have a problem</item>
+    <item name="gist_error_description" type="string">Oops, something went wrong!</item>
+
+    <item name="gist_empty_error_title" type="string">No results found</item>
+    <item name="gist_empty_error_description" type="string">"We can't find any item matching your search"</item>
+
+    <item name="gist_feature_in_progress" type="string">Feature in progress</item>
 
 </resources>

@@ -8,8 +8,8 @@ import androidx.lifecycle.Observer
 import androidx.navigation.fragment.navArgs
 import br.com.gabrielmarcos.githubmvvm.R
 import br.com.gabrielmarcos.githubmvvm.base.view.BaseFragment
+import br.com.gabrielmarcos.githubmvvm.extensions.activityViewModelProvider
 import br.com.gabrielmarcos.githubmvvm.extensions.hide
-import br.com.gabrielmarcos.githubmvvm.extensions.injectViewModel
 import br.com.gabrielmarcos.githubmvvm.model.Gist
 import br.com.gabrielmarcos.githubmvvm.util.bindImageFromUrl
 import kotlinx.android.synthetic.main.gist_detail_fragment.*
@@ -32,7 +32,7 @@ class GistDetailFragment : BaseFragment() {
     }
 
     private fun setUpViewModel() {
-        viewModel = injectViewModel(viewModelFactory)
+        viewModel = activityViewModelProvider(viewModelFactory)
         viewModel.getGist(args.gitsId ?: "")
     }
 
