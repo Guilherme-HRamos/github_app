@@ -20,12 +20,12 @@ open class GistViewModel @Inject constructor(
     var connectionAvailability: Boolean = true
 
     // Only For testes uuuh ugly :(
-    internal var listResult: List<Gist> = emptyList()
+    var listResult: List<Gist> = emptyList()
     internal var favIdList: List<String> = emptyList()
 
     var mainViewState = MainViewState()
     var gistListViewState = GistListViewState()
-    internal val gistDetailViewState = GistDetailViewState()
+    val gistDetailViewState = GistDetailViewState()
 
     fun observeGistListViewState(
         owner: LifecycleOwner,
